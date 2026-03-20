@@ -4,7 +4,7 @@ const SHIP_ART = `  ^
  /|\\
 /___\\`;
 
-const ROT_SPEED = 0.004;
+const ROT_SPEED = 0.04;
 const THRUST = 0.22;
 const MAX_SPEED = 8;
 const INVINCIBLE_DURATION = 3000;

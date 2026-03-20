@@ -7,14 +7,14 @@ export class Explosion {
     this.particles = [];
     for (let i = 0; i < count; i++) {
       const angle = randBetween(0, Math.PI * 2);
-      const speed = randBetween(30, 150);
+      const speed = randBetween(3, 15);
       this.particles.push({
         x,
         y,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
         char: CHARS[Math.floor(Math.random() * CHARS.length)],
-        life: randBetween(400, 900),
+        life: randBetween(600, 1200),
         maxLife: 0,
       });
       this.particles[this.particles.length - 1].maxLife = this.particles[this.particles.length - 1].life;
