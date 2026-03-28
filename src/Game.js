@@ -5,6 +5,19 @@ import { Explosion } from './Explosion.js';
 import { circleHit, randBetween } from './utils.js';
 
 const STATES = { START: 'START', PLAYING: 'PLAYING', DEAD: 'DEAD', GAME_OVER: 'GAME_OVER' };
+const TITLE_LINES = [
+  '       d8888  .d8888b.   .d8888b. 8888888 8888888 8888888b.   .d88888b. 8888888 8888888b.   .d8888b.  ',
+  '      d88888 d88P  Y88b d88P  Y88b  888     888   888   Y88b d88P" "Y88b  888   888  "Y88b d88P  Y88b ',
+  '     d88P888 Y88b.      888    888  888     888   888    888 888     888  888   888    888 Y88b.      ',
+  '    d88P 888  "Y888b.   888         888     888   888   d88P 888     888  888   888    888  "Y888b.   ',
+  '   d88P  888     "Y88b. 888         888     888   8888888P"  888     888  888   888    888     "Y88b. ',
+  '  d88P   888       "888 888    888  888     888   888 T88b   888     888  888   888    888       "888 ',
+  ' d8888888888 Y88b  d88P Y88b  d88P  888     888   888  T88b  Y88b. .d88P  888   888  .d88P Y88b  d88P ',
+  'd88P     888  "Y8888P"   "Y8888P" 8888888 8888888 888   T88b  "Y88888P" 8888888 8888888P"   "Y8888P"  ',
+];
+const TITLE_WAVE_PERIOD = 5000;   // ms between each wave
+const TITLE_WAVE_SPREAD = 1500;   // ms for wave to travel top-left → bottom-right
+const TITLE_CYCLE_DURATION = 400; // ms each character spends cycling through digits
 const POINTS = { 3: 20, 2: 50, 1: 100 };
 const MAX_BULLETS = 4;
 const RESPAWN_DELAY = 2000;
@@ -29,6 +42,7 @@ export class Game {
     this.waveFlash = 0;
     this.blinkTimer = 0;
     this.speedMult = 1;
+    this.titleCharWidth = null;
     this.stars = Array.from({ length: 80 }, () => ({
       x: Math.random() * p.width,
       y: Math.random() * p.height,
@@ -237,21 +251,34 @@ export class Game {
   _drawStartScreen() {
     const p = this.p;
     this._drawStars();
-    const title = [
-      '       d8888  .d8888b.   .d8888b. 8888888 8888888 8888888b.   .d88888b. 8888888 8888888b.   .d8888b.  ',
-      '      d88888 d88P  Y88b d88P  Y88b  888     888   888   Y88b d88P" "Y88b  888   888  "Y88b d88P  Y88b ',
-      '     d88P888 Y88b.      888    888  888     888   888    888 888     888  888   888    888 Y88b.      ',
-      '    d88P 888  "Y888b.   888         888     888   888   d88P 888     888  888   888    888  "Y888b.   ',
-      '   d88P  888     "Y88b. 888         888     888   8888888P"  888     888  888   888    888     "Y88b. ',
-      '  d88P   888       "888 888    888  888     888   888 T88b   888     888  888   888    888       "888 ',
-      ' d8888888888 Y88b  d88P Y88b  d88P  888     888   888  T88b  Y88b. .d88P  888   888  .d88P Y88b  d88P ',
-      'd88P     888  "Y8888P"   "Y8888P" 8888888 8888888 888   T88b  "Y88888P" 8888888 8888888P"   "Y8888P"  ',
-    ];
+
     p.textSize(12);
     p.fill(255, 176, 0);
+
+    if (!this.titleCharWidth) {
+      this.titleCharWidth = p.textWidth('0');
+    }
+    const cw = this.titleCharWidth;
+
+    const maxRows = TITLE_LINES.length - 1;
+    const maxCols = TITLE_LINES[0].length - 1;
+    const t = this.blinkTimer % TITLE_WAVE_PERIOD;
+
     let ty = 100;
-    for (const line of title) {
-      p.text(line, this.W / 2, ty);
+    for (let li = 0; li < TITLE_LINES.length; li++) {
+      const line = TITLE_LINES[li];
+      const startX = this.W / 2 - line.length * cw / 2 + cw / 2;
+      for (let ci = 0; ci < line.length; ci++) {
+        const origChar = line[ci];
+        if (origChar === ' ') continue;
+        const diagFrac = (li / maxRows + ci / maxCols) / 2;
+        const charDelay = diagFrac * TITLE_WAVE_SPREAD;
+        let displayChar = origChar;
+        if (t >= charDelay && t < charDelay + TITLE_CYCLE_DURATION) {
+          displayChar = String(Math.floor((t - charDelay) / (TITLE_CYCLE_DURATION / 10)) % 10);
+        }
+        p.text(displayChar, startX + ci * cw, ty);
+      }
       ty += 13;
     }
 
