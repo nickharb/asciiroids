@@ -29,6 +29,13 @@ export class Game {
     this.waveFlash = 0;
     this.blinkTimer = 0;
     this.speedMult = 1;
+    this.stars = Array.from({ length: 80 }, () => ({
+      x: Math.random() * p.width,
+      y: Math.random() * p.height,
+      phase: Math.random() * Math.PI * 2,
+      speed: 0.0008 + Math.random() * 0.0016,
+      char: Math.random() < 0.3 ? '+' : '.',
+    }));
   }
 
   startGame() {
@@ -170,7 +177,7 @@ export class Game {
     const p = this.p;
     p.fill(255, 176, 0);
     p.noStroke();
-    p.textFont('Courier New');
+    p.textFont('IBM Plex Mono');
     p.textSize(14);
     p.textAlign(p.CENTER, p.CENTER);
 
@@ -216,33 +223,46 @@ export class Game {
     p.textAlign(p.CENTER, p.CENTER);
   }
 
+  _drawStars() {
+    const p = this.p;
+    p.textSize(10);
+    for (const s of this.stars) {
+      const alpha = (Math.sin(this.blinkTimer * s.speed + s.phase) + 1) / 2;
+      p.fill(255, 176, 0, alpha * 200);
+      p.text(s.char, s.x, s.y);
+    }
+    p.fill(255, 176, 0);
+  }
+
   _drawStartScreen() {
     const p = this.p;
+    this._drawStars();
     const title = [
-      '    _    ____   ____ ___ ___ ____   ___ ___ ____  ____  ',
-      '   / \\  / ___| / ___|_ _|_ _|  _ \\ / _ \\_ _|  _ \\/ ___|',
-      '  / _ \\ \\___ \\| |    | | | || |_) | | | | || | | \\___ \\',
-      ' / ___ \\ ___) | |___ | | | ||  _ <| |_| | || |_| |___) |',
-      '/_/   \\_\\____/ \\____|___|___|_| \\_\\\\___/___|____/|____/ ',
+      '       d8888  .d8888b.   .d8888b. 8888888 8888888 8888888b.   .d88888b. 8888888 8888888b.   .d8888b.  ',
+      '      d88888 d88P  Y88b d88P  Y88b  888     888   888   Y88b d88P" "Y88b  888   888  "Y88b d88P  Y88b ',
+      '     d88P888 Y88b.      888    888  888     888   888    888 888     888  888   888    888 Y88b.      ',
+      '    d88P 888  "Y888b.   888         888     888   888   d88P 888     888  888   888    888  "Y888b.   ',
+      '   d88P  888     "Y88b. 888         888     888   8888888P"  888     888  888   888    888     "Y88b. ',
+      '  d88P   888       "888 888    888  888     888   888 T88b   888     888  888   888    888       "888 ',
+      ' d8888888888 Y88b  d88P Y88b  d88P  888     888   888  T88b  Y88b. .d88P  888   888  .d88P Y88b  d88P ',
+      'd88P     888  "Y8888P"   "Y8888P" 8888888 8888888 888   T88b  "Y88888P" 8888888 8888888P"   "Y8888P"  ',
     ];
-    p.textSize(11);
+    p.textSize(12);
     p.fill(255, 176, 0);
-    let ty = this.H / 2 - 120;
+    let ty = 100;
     for (const line of title) {
       p.text(line, this.W / 2, ty);
-      ty += 18;
+      ty += 13;
     }
-    p.textSize(14);
-    p.text('ASCII ASTEROIDS', this.W / 2, ty + 10);
 
-    p.textSize(13);
-    p.text('ARROW KEYS: rotate / thrust', this.W / 2, ty + 50);
+    p.textSize(14);
+    p.text('ARROW KEYS: rotate / thrust', this.W / 2, ty + 40);
     p.text('SPACE: fire', this.W / 2, ty + 70);
 
     const blink = Math.floor(this.blinkTimer / 500) % 2 === 0;
     if (blink) {
       p.textSize(16);
-      p.text('[ PRESS ENTER TO START ]', this.W / 2, ty + 110);
+      p.text('[ PRESS ENTER TO START ]', this.W / 2, ty + 150);
     }
     p.textSize(14);
     p.textAlign(p.CENTER, p.BOTTOM);

@@ -6,7 +6,8 @@ new p5(p => {
 
   p.setup = () => {
     p.createCanvas(900, 650);
-    p.textFont('Courier New');
+    p.textFont('IBM Plex Mono');
+    p.textStyle(p.BOLD);
     p.textSize(14);
     p.textAlign(p.CENTER, p.CENTER);
     game = new Game(p);
