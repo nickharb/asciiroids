@@ -3,6 +3,7 @@ import { Asteroid } from './Asteroid.js';
 import { Bullet } from './Bullet.js';
 import { Explosion } from './Explosion.js';
 import { circleHit, randBetween } from './utils.js';
+import { audio } from './Audio.js';
 
 const STATES = { START: 'START', PLAYING: 'PLAYING', DEAD: 'DEAD', GAME_OVER: 'GAME_OVER' };
 const TITLE_LINES = [
@@ -38,6 +39,7 @@ export class Game {
     this.bullets = [];
     this.explosions = [];
     this.keys = { left: false, right: false, thrust: false };
+    this.prevThrust = false;
     this.respawnTimer = 0;
     this.waveFlash = 0;
     this.blinkTimer = 0;
@@ -53,6 +55,7 @@ export class Game {
   }
 
   startGame() {
+    audio.resetForNewGame();
     this.score = 0;
     this.lives = 3;
     this.level = 1;
@@ -61,6 +64,7 @@ export class Game {
     this.explosions = [];
     this.ship = new Ship(this.W / 2, this.H / 2);
     this.ship.makeInvincible();
+    audio.playShipNew();
     this._spawnWave();
     this.state = STATES.PLAYING;
   }
@@ -95,12 +99,14 @@ export class Game {
     if (this.bullets.length >= MAX_BULLETS) return;
     const nose = this.ship.nose;
     this.bullets.push(new Bullet(nose.x, nose.y, this.ship.angle));
+    audio.playLaser();
   }
 
   update(dt) {
     this.blinkTimer += dt;
 
-    if (this.state === STATES.START || this.state === STATES.GAME_OVER) return;
+    if (this.state === STATES.START) return;
+    if (this.state === STATES.GAME_OVER) { audio.playGameOver(); return; }
 
     const p = this.p;
     // poll held keys
@@ -114,12 +120,15 @@ export class Game {
       if (this.respawnTimer <= 0) {
         this.ship = new Ship(this.W / 2, this.H / 2);
         this.ship.makeInvincible();
+        audio.playShipNew();
         this.state = STATES.PLAYING;
       }
       return;
     }
 
     if (this.state === STATES.PLAYING) {
+      if (this.keys.thrust && !this.prevThrust) audio.playThrust();
+      this.prevThrust = this.keys.thrust;
       this.ship.update(dt, this.keys, this.W, this.H);
       this._updateNonShip(dt);
       this.checkCollisions();
@@ -154,7 +163,8 @@ export class Game {
         if (circleHit(b.x, b.y, b.radius, a.x, a.y, a.radius)) {
           b.lifetime = 0; // kill bullet
           this.score += POINTS[a.size];
-          this.explosions.push(new Explosion(a.x, a.y, 12));
+          this.explosions.push(new Explosion(a.x, a.y, 20));
+          audio.playBoom();
           const frags = a.split(this.speedMult);
           newAsteroids.push(...frags);
           this.asteroids.splice(i, 1);
@@ -169,7 +179,8 @@ export class Game {
     if (!this.ship || this.ship.invincible) return;
     for (const a of this.asteroids) {
       if (circleHit(this.ship.x, this.ship.y, this.ship.radius, a.x, a.y, a.radius)) {
-        this.explosions.push(new Explosion(this.ship.x, this.ship.y, 24));
+        this.explosions.push(new Explosion(this.ship.x, this.ship.y, 40));
+        audio.playShipDeath();
         this.ship = null;
         this.lives--;
         if (this.lives <= 0) {
@@ -204,6 +215,8 @@ export class Game {
       this._drawGameOverScreen();
       return;
     }
+
+    this._drawStars();
 
     // draw entities
     for (const a of this.asteroids) a.draw(p);
@@ -299,6 +312,7 @@ export class Game {
 
   _drawGameOverScreen() {
     const p = this.p;
+    this._drawStars();
     p.textSize(36);
     p.fill(255, 176, 0);
     p.text('GAME OVER', this.W / 2, this.H / 2 - 60);
